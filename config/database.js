@@ -11,19 +11,6 @@ if (dbUrl) {
     dialect: 'mysql',
     logging: false
   });
-  // attach connection info (without password) for logging
-  try {
-    const u = new URL(dbUrl);
-    sequelize.connectionInfo = {
-      source: 'url',
-      database: u.pathname ? u.pathname.replace(/^\//, '') : '',
-      host: u.hostname,
-      port: u.port || '3306',
-      user: u.username || ''
-    };
-  } catch (e) {
-    sequelize.connectionInfo = { source: 'url', raw: dbUrl };
-  }
 } else {
   sequelize = new Sequelize(
     process.env.DB_NAME,
@@ -36,13 +23,7 @@ if (dbUrl) {
       logging: false
     }
   );
-  sequelize.connectionInfo = {
-    source: 'env',
-    database: process.env.DB_NAME || '',
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || '3306',
-    user: process.env.DB_USER || ''
-  };
+  // connectionInfo removed for security; rely on Sequelize logging/errors only
 }
 
 module.exports = sequelize;
