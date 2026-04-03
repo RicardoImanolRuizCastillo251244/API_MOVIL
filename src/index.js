@@ -14,8 +14,23 @@ async function start() {
     // WARNING: use only for initial setup on a fresh DB. Do NOT enable in production permanently.
     if (process.env.USE_SYNC === 'true') {
       console.log('USE_SYNC=true — running sequelize.sync({ alter: true })');
-      await sequelize.sync({ alter: true });
-      console.log('Database schema synced (alter).');
+      try {
+        await sequelize.sync({
+          alter: true,
+          logging: (sql) => console.log('sequelize SQL:', sql)
+        });
+        console.log('Database schema synced (alter).');
+      } catch (syncErr) {
+        console.error('sequelize.sync failed:', syncErr);
+      }
+
+      // List tables to verify creation (MySQL)
+      try {
+        const [results /*, metadata */] = await sequelize.query('SHOW TABLES');
+        console.log('SHOW TABLES result:', results.length ? results.slice(0, 20) : results);
+      } catch (qErr) {
+        console.error('SHOW TABLES failed:', qErr);
+      }
     }
 
     app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
