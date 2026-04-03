@@ -5,7 +5,10 @@ const PORT = process.env.PORT || 4000;
 
 async function start() {
   try {
+    console.log('DB connection info:', sequelize.connectionInfo || 'unknown');
+    console.log('Attempting to authenticate with the database...');
     await sequelize.authenticate();
+    console.log('Database connection authenticated successfully.');
 
     // Optional: allow a one-time schema sync when USE_SYNC=true
     // WARNING: use only for initial setup on a fresh DB. Do NOT enable in production permanently.
