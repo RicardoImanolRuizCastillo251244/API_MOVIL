@@ -17,6 +17,16 @@ async function start() {
     }
 
     app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+
+    if (process.env.ENABLE_REMINDERS === 'true') {
+      // start reminders job
+      try {
+        require('./jobs/reminderJob');
+        console.log('Reminders job enabled.');
+      } catch (e) {
+        console.error('Failed to start reminders job:', e.message);
+      }
+    }
   } catch (err) {
     console.error('Failed to start', err);
     process.exit(1);

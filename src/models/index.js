@@ -14,6 +14,8 @@ const Profesor = ProfesorModel(sequelize);
 const Horario = HorarioModel(sequelize);
 const Imagen = ImagenModel(sequelize);
 const DeviceToken = DeviceTokenModel(sequelize);
+const HorarioNotificationModel = require('./horarioNotification');
+const HorarioNotification = HorarioNotificationModel(sequelize);
 
 // Associations
 Usuario.hasMany(Horario, { foreignKey: 'usuarioId' });
@@ -34,6 +36,9 @@ Imagen.belongsTo(Usuario, { foreignKey: 'usuarioId' });
 Usuario.hasMany(DeviceToken, { foreignKey: 'usuarioId' });
 DeviceToken.belongsTo(Usuario, { foreignKey: 'usuarioId' });
 
+Horario.hasMany(HorarioNotification, { foreignKey: 'horarioId' });
+HorarioNotification.belongsTo(Horario, { foreignKey: 'horarioId' });
+
 module.exports = {
   sequelize,
   Sequelize,
@@ -44,5 +49,6 @@ module.exports = {
     Horario,
     Imagen,
     DeviceToken
+    ,HorarioNotification
   }
 };
