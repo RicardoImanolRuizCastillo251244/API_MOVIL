@@ -45,30 +45,85 @@ async function sendToUser({ usuarioId, title, body, data = {} }) {
     return { sent: 0, failed: 0, message: "No hay tokens activos" };
   }
 
-  const response = await admin.messaging().sendEachForMulticast({
-    tokens,
-    notification: { title, body },
-    data
-  });
+  const messaging = admin.messaging();
 
   const invalidTokens = [];
-  response.responses.forEach((item, index) => {
-    if (item.success) return;
-    const code = item.error && item.error.code;
-    if (code === "messaging/registration-token-not-registered" || code === "messaging/invalid-registration-token") {
-      invalidTokens.push(tokens[index]);
+
+  // Ensure data values are strings (FCM requires string->string map for data)
+  const dataMap = {};
+  if (data && typeof data === 'object') {
+    Object.entries(data).forEach(([k, v]) => {
+      dataMap[k] = typeof v === 'string' ? v : JSON.stringify(v);
+    });
+  }
+
+  // Prefer sendMulticast / sendAll, otherwise fallback to per-token send().
+  if (typeof messaging.sendMulticast === "function") {
+    const response = await messaging.sendMulticast({ tokens, notification: { title, body }, data: dataMap });
+    const responses = response.responses || [];
+    const errors = [];
+    responses.forEach((item, index) => {
+      if (item.success) return;
+      const errMsg = (item.error && (item.error.code || item.error.message)) || 'unknown error';
+      errors.push({ token: tokens[index], error: errMsg });
+      const code = item.error && item.error.code;
+      if (code === "messaging/registration-token-not-registered" || code === "messaging/invalid-registration-token") {
+        invalidTokens.push(tokens[index]);
+      }
+    });
+    if (invalidTokens.length > 0) await deviceTokenRepo.deactivateByTokens(invalidTokens);
+    if (process.env.DEBUG_PUSH === 'true') console.error('FCM multicast errors:', errors);
+    const result = { sent: response.successCount, failed: response.failureCount, invalidated: invalidTokens.length };
+    if (process.env.DEBUG_PUSH === 'true') result.errors = errors;
+    return result;
+  }
+
+  if (typeof messaging.sendAll === "function") {
+    const messages = tokens.map((t) => ({ token: t, notification: { title, body }, data }));
+    const response = await messaging.sendAll(messages);
+    const responses = response.responses || [];
+    const errors = [];
+    responses.forEach((item, index) => {
+      if (item.success) return;
+      const errMsg = (item.error && (item.error.code || item.error.message)) || 'unknown error';
+      errors.push({ token: tokens[index], error: errMsg });
+      const code = item.error && item.error.code;
+      if (code === "messaging/registration-token-not-registered" || code === "messaging/invalid-registration-token") {
+        invalidTokens.push(tokens[index]);
+      }
+    });
+    if (invalidTokens.length > 0) await deviceTokenRepo.deactivateByTokens(invalidTokens);
+    if (process.env.DEBUG_PUSH === 'true') console.error('FCM sendAll errors:', errors);
+    const result = { sent: response.successCount, failed: response.failureCount, invalidated: invalidTokens.length };
+    if (process.env.DEBUG_PUSH === 'true') result.errors = errors;
+    return result;
+  }
+
+  // Final fallback: send one-by-one using messaging.send()
+  let successCount = 0;
+  let failureCount = 0;
+  const results = await Promise.all(tokens.map((t) =>
+    messaging.send({ token: t, notification: { title, body }, data: dataMap }).then(() => ({ success: true })).catch((err) => ({ success: false, error: err && (err.code || err.message) || 'unknown error' }))
+  ));
+
+  const errors = [];
+  results.forEach((r, i) => {
+    if (r.success) successCount++;
+    else {
+      failureCount++;
+      const code = r.error;
+      errors.push({ token: tokens[i], error: code });
+      if (code === "messaging/registration-token-not-registered" || code === "messaging/invalid-registration-token") {
+        invalidTokens.push(tokens[i]);
+      }
     }
   });
 
-  if (invalidTokens.length > 0) {
-    await deviceTokenRepo.deactivateByTokens(invalidTokens);
-  }
-
-  return {
-    sent: response.successCount,
-    failed: response.failureCount,
-    invalidated: invalidTokens.length
-  };
+  if (invalidTokens.length > 0) await deviceTokenRepo.deactivateByTokens(invalidTokens);
+  if (process.env.DEBUG_PUSH === 'true') console.error('FCM per-token errors:', errors);
+  const final = { sent: successCount, failed: failureCount, invalidated: invalidTokens.length };
+  if (process.env.DEBUG_PUSH === 'true') final.errors = errors;
+  return final;
 }
 
 module.exports = {
