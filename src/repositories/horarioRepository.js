@@ -10,20 +10,20 @@ async function findByUsuario(usuarioId) {
   return await Horario.findAll({ where: { usuarioId } });
 }
 
-async function findByIdAndUsuario(id, usuarioId) {
-  return await Horario.findOne({ where: { id, usuarioId } });
+async function findByIdAndUsuario(id, usuarioId, options = {}) {
+  return await Horario.findOne({ where: { id, usuarioId }, ...options });
 }
 
-async function updateHorario(id, usuarioId, changes) {
-  const h = await findByIdAndUsuario(id, usuarioId);
+async function updateHorario(id, usuarioId, changes, options = {}) {
+  const h = await findByIdAndUsuario(id, usuarioId, options);
   if (!h) return null;
-  return await h.update(changes);
+  return await h.update(changes, options);
 }
 
-async function deleteHorario(id, usuarioId) {
-  const h = await findByIdAndUsuario(id, usuarioId);
+async function deleteHorario(id, usuarioId, options = {}) {
+  const h = await findByIdAndUsuario(id, usuarioId, options);
   if (!h) return 0;
-  await h.destroy();
+  await h.destroy(options);
   return 1;
 }
 

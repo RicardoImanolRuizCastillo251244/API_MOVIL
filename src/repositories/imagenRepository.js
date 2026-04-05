@@ -1,5 +1,6 @@
 const { models } = require('../models');
 const { Imagen } = models;
+const { Op } = require('sequelize');
 
 async function createImagen(data) {
   return await Imagen.create(data);
@@ -22,4 +23,28 @@ async function deleteImagen(id, usuarioId) {
   return 1;
 }
 
-module.exports = { createImagen, findByUsuario, findByIdAndUsuario, deleteImagen };
+async function deleteByHorarioAndUsuario({ horarioId, materiaId, usuarioId, transaction }) {
+  const where = {
+    usuarioId,
+    [Op.or]: [
+      { horarioId },
+      // Compatibilidad con imágenes antiguas sin horarioId asignado.
+      { horarioId: null, materiaId }
+    ]
+  };
+
+  const images = await Imagen.findAll({ where, transaction });
+  for (const img of images) {
+    await img.destroy({ transaction });
+  }
+
+  return images.length;
+}
+
+module.exports = {
+  createImagen,
+  findByUsuario,
+  findByIdAndUsuario,
+  deleteImagen,
+  deleteByHorarioAndUsuario
+};

@@ -4,7 +4,7 @@ const supabase = require('../lib/supabase');
 async function create(req, res) {
   try {
     const usuarioId = req.user.id;
-    const { materiaId, nota } = req.body;
+    const { materiaId, nota, horarioId } = req.body;
 
     // file comes from multer memoryStorage
     const file = req.file;
@@ -24,9 +24,20 @@ async function create(req, res) {
     const { data: urlData } = supabase.storage.from('apuntes').getPublicUrl(filename);
     const publicURL = urlData && urlData.publicUrl ? urlData.publicUrl : null;
 
+    const parsedMateriaId = Number(materiaId);
+    if (Number.isNaN(parsedMateriaId)) return res.status(400).json({ error: 'materiaId required' });
+
+    const parsedHorarioId = horarioId === undefined || horarioId === null || horarioId === ''
+      ? null
+      : Number(horarioId);
+    if (horarioId !== undefined && horarioId !== null && horarioId !== '' && Number.isNaN(parsedHorarioId)) {
+      return res.status(400).json({ error: 'invalid horarioId' });
+    }
+
     const payload = {
-      materiaId: Number(materiaId),
+      materiaId: parsedMateriaId,
       usuarioId,
+      horarioId: parsedHorarioId,
       uri: publicURL || filename,
       nota: nota || null,
       fecha: Date.now(),

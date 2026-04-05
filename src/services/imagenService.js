@@ -3,9 +3,17 @@ const { models } = require('../models');
 
 async function createImagen(data) {
   // Validate materia exists
-  const { Materia } = models;
+  const { Materia, Horario } = models;
   const materia = await Materia.findByPk(data.materiaId);
   if (!materia) throw new Error('Materia not found');
+
+  if (data.horarioId != null) {
+    const horario = await Horario.findOne({ where: { id: data.horarioId, usuarioId: data.usuarioId } });
+    if (!horario) throw new Error('Horario not found');
+    if (Number(horario.materiaId) !== Number(data.materiaId)) {
+      throw new Error('Horario does not belong to materia');
+    }
+  }
 
   // add timestamp if not provided
   if (!data.fecha) data.fecha = Date.now();
