@@ -7,7 +7,8 @@ async function create(req, res) {
     const horario = await horarioService.createHorario(payload);
     res.status(201).json(horario);
   } catch (err) {
-    res.status(400).json({ error: err.message });
+    const status = err.statusCode || 400;
+    res.status(status).json({ error: err.message, code: err.code });
   }
 }
 

@@ -10,6 +10,10 @@ async function findByUsuario(usuarioId) {
   return await Horario.findAll({ where: { usuarioId } });
 }
 
+async function findByUsuarioAndDia(usuarioId, dia) {
+  return await Horario.findAll({ where: { usuarioId, dia } });
+}
+
 async function findByIdAndUsuario(id, usuarioId, options = {}) {
   return await Horario.findOne({ where: { id, usuarioId }, ...options });
 }
@@ -27,7 +31,14 @@ async function deleteHorario(id, usuarioId, options = {}) {
   return 1;
 }
 
-module.exports = { createHorario, findByUsuario, findByIdAndUsuario, updateHorario, deleteHorario };
+module.exports = {
+  createHorario,
+  findByUsuario,
+  findByUsuarioAndDia,
+  findByIdAndUsuario,
+  updateHorario,
+  deleteHorario
+};
 
 // Find horarios that start in `minutes` minutes from now (based on day name and horaInicio "HH:mm")
 async function findStartingInMinutes(minutes) {
