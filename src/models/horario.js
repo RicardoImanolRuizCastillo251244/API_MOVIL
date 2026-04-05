@@ -9,6 +9,7 @@ module.exports = (sequelize) => {
     dia: { type: DataTypes.STRING, allowNull: false },
     horaInicio: { type: DataTypes.STRING, allowNull: false },
     horaFin: { type: DataTypes.STRING, allowNull: false },
+    startAt: { type: DataTypes.DATE, allowNull: true },
     color: { type: DataTypes.STRING, allowNull: false }
   }, {
     tableName: 'horarios',

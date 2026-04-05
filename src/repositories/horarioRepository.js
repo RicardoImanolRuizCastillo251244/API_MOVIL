@@ -1,5 +1,6 @@
 const { models } = require('../models');
 const { Horario } = models;
+const { Op } = require('sequelize');
 
 async function createHorario(data) {
   return await Horario.create(data);
@@ -31,15 +32,42 @@ module.exports = { createHorario, findByUsuario, findByIdAndUsuario, updateHorar
 // Find horarios that start in `minutes` minutes from now (based on day name and horaInicio "HH:mm")
 async function findStartingInMinutes(minutes) {
   const target = new Date(Date.now() + minutes * 60000);
-  const days = ['Domingo','Lunes','Martes','Miércoles','Jueves','Viernes','Sábado'];
-  const dayName = days[target.getDay()];
   const pad = (n) => (n < 10 ? '0' + n : '' + n);
   const time = `${pad(target.getHours())}:${pad(target.getMinutes())}`;
 
-  return await Horario.findAll({
-    where: { dia: dayName, horaInicio: time },
+  // window for startAt matching: exact minute (from start to end of that minute)
+  const start = new Date(target);
+  start.setSeconds(0, 0);
+  const end = new Date(start.getTime() + 59999);
+
+  // normalize function: lowercase and remove accents
+  const normalize = (s) => {
+    if (!s) return '';
+    return s
+      .toString()
+      .normalize('NFD')
+      .replace(/\p{Diacritic}/gu, '')
+      .toLowerCase()
+      .trim();
+  };
+
+  const dayNames = ['domingo','lunes','martes','miercoles','miercoles','jueves','viernes','sabado'];
+  const serverDay = normalize(target.toLocaleDateString('es-ES', { weekday: 'long' }));
+
+  // First, prefer horarios with explicit startAt timestamps in the target minute
+  const withStart = await Horario.findAll({
+    where: { startAt: { [Op.between]: [start, end] } },
     include: [ { model: models.Materia, attributes: ['nombre'] } ]
   });
+
+  // Fallback: horarios without startAt — match by dia + horaInicio
+  const withoutStart = await Horario.findAll({ where: { startAt: null }, include: [ { model: models.Materia, attributes: ['nombre'] } ] });
+  const fallback = withoutStart.filter((h) => {
+    const hDia = normalize(h.dia);
+    return hDia === serverDay && h.horaInicio === time;
+  });
+
+  return withStart.concat(fallback);
 }
 
 // Record that a notification for this horario and scheduled time was sent
