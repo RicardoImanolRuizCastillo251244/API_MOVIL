@@ -30,6 +30,10 @@ Horario.belongsTo(Profesor, { foreignKey: 'profesorId' });
 Materia.hasMany(Imagen, { foreignKey: 'materiaId' });
 Imagen.belongsTo(Materia, { foreignKey: 'materiaId' });
 
+// new association: Imagen may belong to a Horario
+Horario.hasMany(Imagen, { foreignKey: 'horarioId' });
+Imagen.belongsTo(Horario, { foreignKey: 'horarioId' });
+
 Usuario.hasMany(Imagen, { foreignKey: 'usuarioId' });
 Imagen.belongsTo(Usuario, { foreignKey: 'usuarioId' });
 

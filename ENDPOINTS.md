@@ -127,7 +127,8 @@ Todas las rutas bajo `/horarios` requieren `Authorization: Bearer <token>` y se 
   "dia": "Lunes",
   "horaInicio": "08:00",
   "horaFin": "09:30",
-  "color": "#ff8800"
+  "color": "#ff8800",
+  "startAt": "2026-04-05T08:00:00Z" // opcional: timestamp ISO para hora exacta
 }
 ```
 - Response 201 JSON (objeto creado):
@@ -140,7 +141,8 @@ Todas las rutas bajo `/horarios` requieren `Authorization: Bearer <token>` y se 
   "dia": "Lunes",
   "horaInicio": "08:00",
   "horaFin": "09:30",
-  "color": "#ff8800"
+  "color": "#ff8800",
+  "startAt": null
 }
 ```
 - Error 400: valida campos / relaciones
@@ -163,7 +165,9 @@ Todas las rutas bajo `/horarios` requieren `Authorization: Bearer <token>` y se 
 { "horaFin": "10:00", "color": "#112233" }
 ```
 - Response 200 JSON: objeto actualizado
-- Error 404 si no existe o no pertenece al usuario
+ - Error 404 si no existe o no pertenece al usuario
+
+Nota: `Horario` puede incluir ahora un campo opcional `startAt` (tipo `DATETIME`). El backend usa `startAt` para la lógica de recordatorios (si está presente) y, si es `null`, continúa usando `dia` + `horaInicio`.
 
 ### DELETE /horarios/:id
 - Auth: Sí
@@ -273,6 +277,16 @@ Rutas para registrar token FCM y enviar notificación de prueba al usuario auten
 }
 ```
 - Nota: requiere `FIREBASE_SERVICE_ACCOUNT_JSON` en backend para enviar por FCM.
+
+Notas adicionales:
+
+- Recordatorios automáticos: el servidor puede enviar recordatorios automáticamente 10 minutos antes de una clase. Para activarlo, configura la variable de entorno `ENABLE_REMINDERS=true` y reinicia la app. El job corre cada minuto y usa `startAt` si está presente, o `dia` + `horaInicio` como fallback.
+- Variables de entorno relacionadas con push:
+  - `FIREBASE_SERVICE_ACCOUNT_JSON`: contenido JSON de la service account para inicializar `firebase-admin`.
+  - `ENABLE_REMINDERS=true`: habilita el job de recordatorios en servidor.
+  - `DEBUG_PUSH=true`: activa logs adicionales para debugging de envíos push.
+- Dedupe y registro: el backend guarda envíos realizados en la tabla `horario_notifications` para evitar duplicados.
+- Tokens inválidos: `pushService` desactiva automáticamente (`isActive=false`) tokens que FCM marca como inválidos. Aun así, es recomendable revisar y limpiar tokens sospechosos (p. ej. valores que contienen `.` como JWTs guardados por error).
 
 ---
 
