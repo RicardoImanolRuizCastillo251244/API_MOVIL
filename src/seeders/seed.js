@@ -7,7 +7,14 @@ const profesoresSeed = [
   { id: 3, nombre: 'Mtro. Horacio' },
   { id: 4, nombre: 'Mtra. Diana' },
   { id: 5, nombre: 'Mtro. Renan' },
-  { id: 6, nombre: 'Mtro. Ali' }
+  { id: 6, nombre: 'Mtro. Alonso G' },
+  { id: 7, nombre: 'Mtro. Viviana'},
+  { id: 8, nombre: 'Mtro. Ramses'},
+  { id: 9, nombre: 'Mtro. Alejandro'},
+  { id: 10, nombre: 'Mtro. Viviana B'},
+  { id: 11, nombre: 'Mtro. Miguel E'},
+  { id: 12, nombre: 'Mtro. Sirgei'},
+  { id: 13, nombre: 'Mtro. Marcelo'}
 ];
 
 const materiasSeed = [
