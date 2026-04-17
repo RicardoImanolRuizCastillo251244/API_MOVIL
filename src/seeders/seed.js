@@ -86,19 +86,25 @@ async function seed() {
   try {
     await sequelize.authenticate();
     await sequelize.sync();
+    const force = process.argv.includes('--force') || process.env.FORCE_SEED === 'true';
+
+    if (force) {
+      console.log('Force seeding enabled — deleting dependent data first');
+      // Delete dependent data in correct order to avoid FK constraint errors
+      if (models.HorarioNotification) await models.HorarioNotification.destroy({ where: {} });
+      if (models.Imagen) await models.Imagen.destroy({ where: {} });
+      if (models.Horario) await models.Horario.destroy({ where: {} });
+      // Then clear profesores y materias
+      if (models.Profesor) await models.Profesor.destroy({ where: {} });
+      if (models.Materia) await models.Materia.destroy({ where: {} });
+    }
 
     for (const p of profesoresSeed) {
-      const exists = await models.Profesor.findByPk(p.id);
-      if (!exists) {
-        await models.Profesor.create(p);
-      }
+      await models.Profesor.upsert(p);
     }
 
     for (const m of materiasSeed) {
-      const exists = await models.Materia.findByPk(m.id);
-      if (!exists) {
-        await models.Materia.create(m);
-      }
+      await models.Materia.upsert(m);
     }
 
     console.log('Seed completed');

@@ -7,6 +7,7 @@
     "start": "node src/index.js",
     "dev": "nodemon src/index.js",
     "seed": "node src/seeders/seed.js",
+    "seed:force": "node src/seeders/seed.js --force",
     "migrate": "npx sequelize-cli db:migrate",
     "migrate:undo": "npx sequelize-cli db:migrate:undo:all",
     "seed:all": "npx sequelize-cli db:seed:all"
